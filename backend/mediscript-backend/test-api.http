@@ -1,0 +1,12 @@
+### Create Doctor
+
+POST http://localhost:8080/api/users
+Content-Type: application/json
+
+{
+  "name": "Dr. Test",
+  "email": "doctor@test.com",
+  "password": "test123",
+  "phone": "9876543210",
+  "role": "DOCTOR"
+}
