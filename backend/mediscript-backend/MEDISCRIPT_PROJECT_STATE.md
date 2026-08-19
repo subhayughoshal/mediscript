@@ -295,6 +295,56 @@ A previous startup error occurred because the secret was only 224 bits.
 
 That issue has been fixed by setting a sufficiently long random secret.
 
+## Current Authentication Progress
+
+### BCrypt Password Hashing
+- BCrypt password hashing is implemented in `UserService`.
+- New users are saved with BCrypt-hashed passwords.
+- Password verification is performed using `PasswordEncoder.matches()`.
+- Temporary test users were created to verify BCrypt authentication.
+
+### JWT Authentication
+- `JwtService` has been implemented.
+- JWT contains:
+    - email as the subject
+    - userId claim
+    - role claim
+    - issued-at timestamp
+    - expiration timestamp
+- JWT is signed using the configured secret key.
+- `AuthenticationService`:
+    - finds the user by email
+    - verifies the password using BCrypt
+    - checks that the user status is `ACTIVE`
+- `LoginResponse` returns:
+    - JWT token
+    - user ID
+    - name
+    - email
+    - role
+- `AuthController` exposes:
+    - `POST /api/auth/login`
+
+### JWT Login Verification
+JWT login has been successfully tested with:
+
+- Email: `jwt.doctor@test.com`
+- Role: `DOCTOR`
+- User ID: `4`
+- Password authentication: SUCCESS
+- JWT generation: SUCCESS
+- Login response: SUCCESS
+
+The password used for this test user must NOT be stored in this project state file.
+
+### Next Step
+Implement JWT request authentication using a JWT authentication filter so that requests containing:
+
+`Authorization: Bearer <JWT>`
+
+are validated and the authenticated user is placed into Spring Security's `SecurityContext`.
+
+After that, test protected endpoints and then implement role-based authorization.
 ---
 
 # 9. APPLICATION.YAML

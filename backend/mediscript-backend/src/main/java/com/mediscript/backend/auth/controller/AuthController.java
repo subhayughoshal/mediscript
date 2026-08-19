@@ -1,7 +1,9 @@
 package com.mediscript.backend.auth.controller;
 
 import com.mediscript.backend.auth.dto.LoginRequest;
+import com.mediscript.backend.auth.dto.LoginResponse;
 import com.mediscript.backend.auth.service.AuthenticationService;
+import com.mediscript.backend.auth.service.JwtService;
 import com.mediscript.backend.user.entity.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,13 +13,18 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthenticationService authenticationService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthenticationService authenticationService) {
+    public AuthController(
+            AuthenticationService authenticationService,
+            JwtService jwtService
+    ) {
         this.authenticationService = authenticationService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(
+    public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest request
     ) {
 
@@ -26,8 +33,20 @@ public class AuthController {
                 request.getPassword()
         );
 
-        return ResponseEntity.ok(
-                "Login successful for " + user.getEmail()
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getName()
         );
+
+        LoginResponse response = new LoginResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().getName()
+        );
+
+        return ResponseEntity.ok(response);
     }
 }
