@@ -1,5 +1,6 @@
 package com.mediscript.backend.user.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.mediscript.backend.user.entity.Role;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.RoleRepository;
@@ -11,13 +12,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserService(
             UserRepository userRepository,
-            RoleRepository roleRepository
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User createUser(
@@ -40,7 +44,7 @@ public class UserService {
         User user = new User(
                 name,
                 email,
-                password,
+                passwordEncoder.encode(password),
                 phone,
                 role,
                 "ACTIVE"

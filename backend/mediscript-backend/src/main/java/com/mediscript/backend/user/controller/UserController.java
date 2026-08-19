@@ -1,6 +1,7 @@
 package com.mediscript.backend.user.controller;
 
 import com.mediscript.backend.user.dto.CreateUserRequest;
+import com.mediscript.backend.user.dto.UserResponse;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(
+    public ResponseEntity<UserResponse> createUser(
             @RequestBody CreateUserRequest request
     ) {
 
@@ -30,8 +31,17 @@ public class UserController {
                 request.getRole()
         );
 
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.getStatus()
+        );
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(user);
+                .body(response);
     }
 }
