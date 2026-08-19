@@ -28,7 +28,7 @@ public class UserController {
                 request.getEmail(),
                 request.getPassword(),
                 request.getPhone(),
-                request.getRole()
+                "PATIENT"
         );
 
         UserResponse response = new UserResponse(

@@ -599,3 +599,47 @@ ERRORS FIXED:
 CURRENT NEXT TASK:
 GIT COMMIT:
 IMPORTANT NOTES:
+
+
+## Current Checkpoint — JWT Authentication + Role-Based Authorization
+
+### Authentication
+- Login endpoint: `POST /api/auth/login`
+- Passwords are verified using BCrypt.
+- Successful login returns a JWT.
+- JWT contains:
+    - userId
+    - email (subject)
+    - role
+    - issuedAt
+    - expiration
+
+### JWT Security
+- `JwtService` generates JWT tokens.
+- `JwtAuthenticationFilter` extracts and validates the Bearer token.
+- Authenticated users receive Spring Security authorities based on their database role.
+- Roles are represented as `ROLE_ADMIN`, `ROLE_DOCTOR`, etc.
+
+### Public Registration
+- Endpoint: `POST /api/users`
+- Public registration cannot create an arbitrary role.
+- A request containing `"role": "ADMIN"` was tested and resulted in a `PATIENT`.
+- Password is BCrypt-hashed before storage.
+
+### Admin User Management
+- Endpoint: `POST /api/admin/users`
+- Requires `ROLE_ADMIN`.
+- Admin can create users with roles such as DOCTOR, RECEPTIONIST, and PATIENT.
+- Created passwords are BCrypt-hashed.
+
+### Authorization Tests Completed
+- No JWT → `/api/admin/users` → `403 Forbidden`
+- DOCTOR JWT → `/api/admin/users` → `403 Forbidden`
+- ADMIN JWT → `/api/admin/users` → successful user creation
+- Public registration requesting ADMIN → PATIENT
+- BCrypt storage verified in PostgreSQL.
+
+### Next Step
+- Continue building role-specific functionality.
+- Add proper exception handling and validation where appropriate.
+- Continue testing secured endpoints.
