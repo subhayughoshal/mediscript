@@ -1,12 +1,26 @@
 # MediScript Project Development State
 
-Last Updated: 2026-08-19
+Last Updated: 2026-08-20
 Project: MediScript
 Purpose: Digital Prescription Web Application
 
 ---
 
-# 1. DEVELOPMENT ENVIRONMENT
+# 1. PROJECT OVERVIEW
+
+MediScript is a digital prescription web application.
+
+Current development focus:
+- Backend development
+- Authentication and authorization
+- User and role management
+- PostgreSQL persistence
+
+Frontend development has not started yet.
+
+---
+
+# 2. DEVELOPMENT ENVIRONMENT
 
 OS:
 - Windows
@@ -15,32 +29,33 @@ Java:
 - Java 21.0.12 LTS
 - JAVA_HOME configured
 
+IDE:
+- IntelliJ IDEA
+
 Build:
 - Maven Wrapper
 - `mvnw.cmd`
-
-IDE:
-- IntelliJ IDEA
 
 Spring Boot:
 - 4.1.0
 
 Database:
 - PostgreSQL
-- Database name: mediscript_db
+- Database name: `mediscript_db`
 - PostgreSQL version observed: 18.6
 
 Git:
 - Repository initialized
-- Branch: main
-- Initial commit:
-  `5c26b22 Initial MediScript backend setup`
+- Branch: `main`
+- Remote: `origin`
+- Current Git commit:
+  `133f2c4 Add admin user management and role authorization`
 
 ---
 
-# 2. CURRENT APPLICATION STATUS
+# 3. APPLICATION STATUS
 
-Application currently starts successfully.
+Application starts successfully.
 
 Expected startup message:
 
@@ -58,31 +73,31 @@ Hibernate:
 
 ---
 
-# 3. ENVIRONMENT VARIABLES
+# 4. ENVIRONMENT VARIABLES
 
 Required:
 
-DB_PASSWORD
-JWT_SECRET
+- `DB_PASSWORD`
+- `JWT_SECRET`
 
-Current PowerShell session:
-- DB_PASSWORD is set
-- JWT_SECRET was initially missing
-- JWT_SECRET was subsequently set to a sufficiently long random secret
+Current configuration:
+
+- `DB_PASSWORD` is configured
+- `JWT_SECRET` is configured
+- JWT secret is sufficiently long for the configured signing algorithm
 
 IMPORTANT:
-- Never commit actual secret values to Git.
+- Never commit actual secret values.
 - Never put real secrets in source code.
+- Never put passwords, JWT secrets, API keys, or other credentials in this file.
 
 ---
 
-# 4. DATABASE
+# 5. DATABASE
 
 Database:
 
 `mediscript_db`
-
-Existing tables:
 
 ## roles
 
@@ -114,13 +129,13 @@ Columns:
 
 Relationship:
 
-users.role_id -> roles.id
+`users.role_id -> roles.id`
 
 Email is unique.
 
 ---
 
-# 5. PROJECT PACKAGE STRUCTURE
+# 6. CURRENT PACKAGE STRUCTURE
 
 Current feature-based structure:
 
@@ -132,9 +147,15 @@ com.mediscript.backend
 │   ├── dto
 │   │   ├── LoginRequest.java
 │   │   └── LoginResponse.java
+│   ├── filter
+│   │   └── JwtAuthenticationFilter.java
 │   └── service
 │       ├── AuthenticationService.java
 │       └── JwtService.java
+│
+├── admin
+│   └── controller
+│       └── AdminUserController.java
 │
 ├── config
 │   ├── RoleDataInitializer.java
@@ -159,13 +180,24 @@ com.mediscript.backend
 
 ---
 
-# 6. COMPLETED USER MODULE
+# 7. USER AND ROLE MODULE
 
 ## Role Entity
-DONE
+
+Status:
+- DONE
+
+Role fields:
+
+- id
+- name
+
+---
 
 ## User Entity
-DONE
+
+Status:
+- DONE
 
 User fields:
 
@@ -179,21 +211,29 @@ User fields:
 - createdAt
 - updatedAt
 
-Role relationship:
+Relationship:
 
-@ManyToOne
+- User -> Role
+- `@ManyToOne`
+- `users.role_id -> roles.id`
 
-users.role_id references roles.id
+---
 
 ## RoleRepository
-DONE
+
+Status:
+- DONE
 
 Contains:
 
 `findByName(String name)`
 
+---
+
 ## UserRepository
-DONE
+
+Status:
+- DONE
 
 Contains:
 
@@ -201,23 +241,37 @@ Contains:
 
 `existsByEmail(String email)`
 
+---
+
 ## UserService
-DONE
+
+Status:
+- DONE
 
 Handles:
 
 - duplicate email checking
 - role lookup
 - user creation
-- password encoding
+- BCrypt password encoding
+- saving users
 
 IMPORTANT:
-BCrypt password hashing has ALREADY BEEN IMPLEMENTED.
 
-DO NOT recreate BCrypt password hashing.
+BCrypt password hashing is ALREADY IMPLEMENTED.
+
+New passwords are encoded using:
+
+`passwordEncoder.encode(password)`
+
+Do NOT recreate BCrypt hashing.
+
+---
 
 ## CreateUserRequest
-DONE
+
+Status:
+- DONE
 
 Fields:
 
@@ -227,419 +281,650 @@ Fields:
 - phone
 - role
 
+---
+
 ## UserResponse
+
+Status:
+- DONE
+
+Used to prevent password information from being returned in API responses.
+
+---
+
+# 8. PUBLIC USER REGISTRATION
+
+Endpoint:
+
+`POST /api/users`
+
+Status:
+- DONE
+- VERIFIED
+
+Public registration is intentionally restricted to the PATIENT role.
+
+The role supplied by the public client is NOT trusted.
+
+Current behavior:
+
+```text
+POST /api/users
+        ↓
+UserController
+        ↓
+UserService
+        ↓
+PATIENT role
+
+
+A security test was performed where the client sent:
+
+{
+  "role": "ADMIN"
+}
+
+The resulting user was created as:
+
+PATIENT
+
+This confirms that anonymous users cannot create themselves as ADMIN through the public registration endpoint.
+
+Password hashing was also verified for this flow.
+
+9. ADMIN USER MANAGEMENT
+
+Endpoint:
+
+POST /api/admin/users
+
+Status:
+
+DONE
+VERIFIED
+
+Controller:
+
+AdminUserController.java
+
+Access:
+
+ADMIN only
+
+Admin users can create users with roles such as:
+
+DOCTOR
+RECEPTIONIST
+PATIENT
+
+Security configuration:
+
+/api/admin/** -> hasRole("ADMIN")
+
+The admin-created user's password is processed through the existing BCrypt implementation in UserService.
+
+10. SPRING SECURITY
+
+Status:
+
+DONE
+VERIFIED
+
+SecurityConfig:
+
 DONE
 
-Created so that User entities/passwords are not directly exposed in API responses.
+PasswordEncoder:
 
-## UserController
+DONE
+
+BCrypt:
+
+DONE
+
+Current authorization rules:
+
+/api/auth/**      -> public
+/api/users/**     -> public
+/api/admin/**     -> ADMIN only
+everything else   -> authenticated
+
+Session policy:
+
+STATELESS
+
+CSRF:
+
+Disabled for the backend API
+11. JWT AUTHENTICATION
+
+Status:
+
+DONE
+VERIFIED
+JwtService
+
+Status:
+
+DONE
+
+Responsibilities:
+
+Generate JWT
+Validate JWT
+Extract email from JWT
+
+JWT contains:
+
+email as subject
+userId claim
+role claim
+issuedAt
+expiration
+
+JWT is signed using the configured secret key.
+
+JWT expiration:
+
+86400000 milliseconds
+
+AuthenticationService
+
+Status:
+
+DONE
+
+Responsibilities:
+
+Find user by email
+Verify password using BCrypt
+Verify account status is ACTIVE
+Return authenticated User
+
+Invalid credentials produce an authentication failure.
+
+AuthController
+
+Status:
+
 DONE
 
 Endpoint:
 
-POST /api/users
+POST /api/auth/login
 
----
+Successful login returns:
 
-# 7. SECURITY
+token
+userId
+name
+email
+role
+LoginRequest
 
-Spring Security dependency:
+Status:
+
 DONE
 
-SecurityConfig:
+Fields:
+
+email
+password
+LoginResponse
+
+Status:
+
 DONE
 
-PasswordEncoder:
-DONE
+Fields:
 
-BCrypt:
+token
+userId
+name
+email
+role
+12. JWT AUTHENTICATION FILTER
+
+File:
+
+JwtAuthenticationFilter.java
+
+Status:
+
 DONE
+VERIFIED
+
+Responsibilities:
+
+Read the Authorization header
+Check for Bearer <JWT>
+Validate the JWT
+Extract the email
+Load the current User from PostgreSQL
+Check that the user is ACTIVE
+Read the user's current database role
+Create the appropriate Spring Security authority
+Set the authenticated user in SecurityContext
+
+Authorities are created using:
+
+ROLE_<DATABASE_ROLE>
+
+Examples:
+
+ADMIN -> ROLE_ADMIN
+DOCTOR -> ROLE_DOCTOR
+PATIENT -> ROLE_PATIENT
+RECEPTIONIST -> ROLE_RECEPTIONIST
 
 IMPORTANT:
-Password hashing has already been implemented in UserService.
 
-Do NOT tell the developer to add BCrypt again unless inspecting the current code proves it is missing or broken.
+The database user and role are used as the authoritative source for current authorization.
 
----
+13. AUTHENTICATION AND AUTHORIZATION TESTS
 
-# 8. JWT AUTHENTICATION
+The following tests have been successfully completed.
 
-JWT dependency/configuration:
-IN PROGRESS
+JWT Login
 
-JwtService:
-EXISTS
+Test user:
 
-AuthenticationService:
-EXISTS
+Email: jwt.doctor@test.com
+Role: DOCTOR
+User ID: 4
 
-AuthController:
-EXISTS
+Result:
 
-LoginRequest:
-EXISTS
+Password authentication: SUCCESS
+JWT generation: SUCCESS
+Login response: SUCCESS
 
-LoginResponse:
-EXISTS
+The test password is intentionally NOT stored in this file.
 
-JWT secret:
-CONFIGURED through environment variable
+Protected Endpoint
 
-JWT expiration:
-86400000 milliseconds
+A temporary protected endpoint was created for testing.
 
-IMPORTANT:
-JWT secret must be >= 256 bits for HS256.
+Tests:
 
-A previous startup error occurred because the secret was only 224 bits.
+Request without JWT -> rejected
+Request with valid JWT -> authenticated
 
-That issue has been fixed by setting a sufficiently long random secret.
+Successful result:
 
-## Current Authentication Progress
+Authenticated as: jwt.doctor@test.com
 
-### BCrypt Password Hashing
-- BCrypt password hashing is implemented in `UserService`.
-- New users are saved with BCrypt-hashed passwords.
-- Password verification is performed using `PasswordEncoder.matches()`.
-- Temporary test users were created to verify BCrypt authentication.
+The temporary security test controller was removed after verification.
 
-### JWT Authentication
-- `JwtService` has been implemented.
-- JWT contains:
-    - email as the subject
-    - userId claim
-    - role claim
-    - issued-at timestamp
-    - expiration timestamp
-- JWT is signed using the configured secret key.
-- `AuthenticationService`:
-    - finds the user by email
-    - verifies the password using BCrypt
-    - checks that the user status is `ACTIVE`
-- `LoginResponse` returns:
-    - JWT token
-    - user ID
-    - name
-    - email
-    - role
-- `AuthController` exposes:
-    - `POST /api/auth/login`
+Doctor Authorization
 
-### JWT Login Verification
-JWT login has been successfully tested with:
+A temporary doctor-protected endpoint was tested.
 
-- Email: `jwt.doctor@test.com`
-- Role: `DOCTOR`
-- User ID: `4`
-- Password authentication: SUCCESS
-- JWT generation: SUCCESS
-- Login response: SUCCESS
+DOCTOR JWT:
 
-The password used for this test user must NOT be stored in this project state file.
+Access -> SUCCESS
 
-### Next Step
-Implement JWT request authentication using a JWT authentication filter so that requests containing:
+This verified:
 
-`Authorization: Bearer <JWT>`
+DOCTOR
+  ↓
+ROLE_DOCTOR
+  ↓
+hasRole("DOCTOR")
 
-are validated and the authenticated user is placed into Spring Security's `SecurityContext`.
+The temporary test endpoint was removed after verification.
 
-After that, test protected endpoints and then implement role-based authorization.
----
+Admin Authorization
 
-# 9. APPLICATION.YAML
+Endpoint:
 
-Current structure:
+POST /api/admin/users
+
+Tests performed:
+
+No JWT
+
+Result:
+
+403 Forbidden
+
+DOCTOR JWT
+
+Result:
+
+403 Forbidden
+
+ADMIN JWT
+
+Result:
+
+User creation succeeded.
+
+The created DOCTOR user's password was verified as BCrypt-hashed in PostgreSQL.
+
+Temporary ADMIN and test-created DOCTOR accounts were removed after testing.
+
+Public Registration Security
+
+A request attempting to register as ADMIN:
+
+{
+  "role": "ADMIN"
+}
+
+was tested.
+
+Result:
+
+PATIENT
+
+This confirms that the public registration endpoint does not trust the client's requested role.
+
+14. APPLICATION.YAML
+
+Current important configuration:
 
 spring:
-application:
-name: mediscript-backend
+  application:
+    name: mediscript-backend
 
-datasource:
-url: jdbc:postgresql://localhost:5432/mediscript_db
-username: postgres
-password: ${DB_PASSWORD}
 
-jpa:
-hibernate:
-ddl-auto: update
-show-sql: true
-properties:
-hibernate:
-format_sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mediscript_db
+    username: postgres
+    password: ${DB_PASSWORD}
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
 
 jwt:
-secret: ${JWT_SECRET}
-expiration: 86400000
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
 
 server:
-port: 8080
+  port: 8080
 
 IMPORTANT:
-`jwt` is a TOP-LEVEL property.
 
-It must NOT be nested inside `spring`.
+jwt is a TOP-LEVEL property.
 
----
+It must NOT be nested inside spring.
 
-# 10. VERIFIED FUNCTIONALITY
+15. KNOWN FIXED ISSUES
+Hibernate Dialect Error
 
-The following has been tested successfully:
+Previous issue:
 
-1. Spring Boot application starts.
-2. PostgreSQL connection works.
-3. Hibernate initializes.
-4. roles table exists.
-5. users table exists.
-6. Role data initializer creates:
-    - ADMIN
-    - DOCTOR
-    - PATIENT
-    - RECEPTIONIST
-7. POST /api/users successfully created a test doctor.
-8. users.role_id correctly references roles.id.
-9. Spring Security dependency resolves.
-10. BCrypt password hashing has been implemented.
-11. JWT service exists.
-12. JWT secret issue has been resolved.
-13. Application currently starts successfully.
+Unable to determine Dialect without JDBC metadata
 
----
+Status:
 
-# 11. TEMPORARY TEST USER
+FIXED
 
-A test user was previously created:
+PostgreSQL connection and Hibernate dialect detection are currently working.
 
-Name:
-Dr. Test
+Do not change Hibernate dialect configuration unnecessarily.
 
-Email:
+Missing JWT Expiration
+
+Previous issue:
+
+jwt.expiration could not be resolved.
+
+Cause:
+
+jwt was incorrectly nested under spring.
+
+Fix:
+
+jwt is now a top-level YAML property.
+
+Status:
+
+FIXED
+Weak JWT Secret
+
+Previous issue:
+
+WeakKeyException
+
+Cause:
+
+JWT secret was too short.
+
+Fix:
+
+A sufficiently long random secret was configured through JWT_SECRET.
+
+Status:
+
+FIXED
+Missing JWT_SECRET
+
+Previous issue:
+
+JWT_SECRET environment variable was missing.
+
+Fix:
+
+JWT_SECRET was configured in the PowerShell environment.
+
+Status:
+
+FIXED
+16. TEST USERS
+
+Existing development/test data may include:
+
+jwt.doctor@test.com
+
+IMPORTANT:
+
+Do not assume that older users have BCrypt passwords.
+
+The original:
+
 doctor@test.com
 
-Role:
-DOCTOR
+user was created before BCrypt was implemented and had a plain-text test password.
 
-This user was originally created before BCrypt security was completed.
+Do not use that account for BCrypt/JWT verification unless its password storage has first been checked.
 
-IMPORTANT:
-If this user still exists, do not assume its stored password is BCrypt-hashed.
+Temporary test users created during security testing have been removed.
 
-Verify before using it for authentication.
+Never store test passwords in this file.
 
----
-
-# 12. GIT
+17. GIT CHECKPOINT
 
 Current branch:
 
 main
 
-Initial commit:
+Current commit:
 
-5c26b22
-Initial MediScript backend setup
+133f2c4 Add admin user management and role authorization
 
-Current changes after that commit include the authentication/JWT/security work.
+Remote:
+
+origin/main
+
+Latest verified state:
+
+HEAD -> main
+origin/main
+working tree clean
 
 IMPORTANT:
-Before committing:
-1. git status
-2. inspect changes
-3. git add .
-4. git commit with a meaningful message
+
+Before future commits:
+
+git status
+Inspect changes
+git add .
+git status
+Commit with a meaningful message
+git push origin main
+Verify git status
 
 Never commit:
-- passwords
-- DB secrets
-- JWT secrets
-- API keys
-- generated secret values
 
----
+passwords
+DB secrets
+JWT secrets
+API keys
+generated secret values
+18. DEVELOPMENT RULES
 
-# 13. RECENT ERRORS THAT ARE ALREADY FIXED
+These rules must be followed for future development:
 
-## Error 1
+Do not recreate completed classes.
+Do not add BCrypt again.
+Do not recreate JWT authentication.
+Do not change working configuration without identifying the reason.
+Before changing existing code, inspect the current implementation.
+When an error occurs, identify the root cause from the actual stack trace/output.
+Make one logical change at a time.
+Build/test after significant changes.
+Do not expose passwords in API responses.
+Never store plain-text passwords.
+Never commit secrets.
+Keep the database relational and normalized.
+Maintain the existing feature-based package structure.
+Preserve Java 21.
+Preserve PostgreSQL.
+Preserve Spring Boot 4.1.0 unless there is a concrete reason to change it.
+Do not jump ahead without completing and testing the current feature.
+Compare proposed changes against this project state before giving implementation instructions.
+Prefer modifying existing working code over creating duplicate implementations.
+Keep temporary testing code separate and remove it after verification.
+Update this state file after every major development checkpoint.
+19. CURRENT DEVELOPMENT STATUS
 
-Hibernate:
+Authentication and authorization foundation:
 
-`Unable to determine Dialect without JDBC metadata`
+COMPLETE
 
-Investigation showed PostgreSQL itself was working.
+User and role foundation:
 
-Current logs confirm:
+COMPLETE
 
-`Database dialect: PostgreSQLDialect`
+Public patient registration:
 
-Therefore this is NOT currently an active problem.
+COMPLETE
 
-Do not change Hibernate dialect configuration unnecessarily.
+Admin user management:
 
----
+COMPLETE
 
-## Error 2
+JWT authentication:
 
-Missing:
+COMPLETE
 
-`jwt.expiration`
+Role-based authorization:
 
-Cause:
+COMPLETE
 
-jwt was incorrectly nested under spring in application.yaml.
+20. NEXT DEVELOPMENT PHASE
 
-Fixed by making:
+The authentication and authorization foundation is now complete.
 
-jwt:
+The next development phase is the actual MediScript medical-domain functionality.
 
-a top-level YAML property.
+Recommended order:
 
----
+Patient management
+Doctor management
+Doctor-patient relationship
+Appointment management
+Prescription management
+Prescription medicines/details
+Prescription viewing/sharing
+Additional validation and exception handling
+Frontend development
+Integration testing
 
-## Error 3
+Before implementing a new module:
 
-JWT:
-
-`WeakKeyException`
-
-Cause:
-
-JWT secret was only 224 bits.
-
-Fixed by generating a sufficiently long random secret.
-
----
-
-## Error 4
-
-JWT_SECRET environment variable was missing.
-
-Fixed by setting JWT_SECRET in the PowerShell environment.
-
----
-
-# 14. CURRENT EXACT POSITION
-
-The application now starts successfully.
-
-The next development task is NOT:
-
-- creating User
-- creating Role
-- creating UserRepository
-- creating UserService
-- adding BCrypt
-- creating SecurityConfig
-- creating JwtService
-
-Those are already done.
-
-NEXT TASK:
-
-Inspect and verify the existing authentication/JWT implementation.
-
-Specifically inspect:
-
-1. JwtService.java
-2. AuthenticationService.java
-3. AuthController.java
-4. LoginRequest.java
-5. LoginResponse.java
-6. SecurityConfig.java
-7. UserResponse.java
-8. UserService.java
-
-Then test:
-
-POST /api/auth/login
-
-using a user whose password has been BCrypt-hashed.
-
-Only after authentication is verified should development proceed to JWT authorization/security filters.
-
----
-
-# 15. DEVELOPMENT RULES
-
-IMPORTANT RULES FOR FUTURE DEVELOPMENT:
-
-1. Do not recreate completed classes.
-2. Do not ask the developer to add BCrypt again.
-3. Do not change working configuration without identifying the reason.
-4. Before changing code, inspect the current implementation.
-5. When an error occurs, identify the root cause from the actual stack trace.
-6. Make one logical change at a time.
-7. Test after each significant change.
-8. Do not introduce unnecessary dependencies.
-9. Do not expose passwords in API responses.
-10. Never store plain-text passwords.
-11. Never commit secrets.
-12. Keep the database relational and normalized.
-13. Maintain the existing feature-based package structure.
-14. Preserve Java 21.
-15. Preserve PostgreSQL.
-16. Preserve Spring Boot 4.1.0 unless there is a concrete reason to change it.
-17. Do not jump ahead to later modules before the current authentication layer is verified.
-18. Before giving instructions, compare them against this project state.
-
----
-
-# 16. SESSION CHECKPOINT FORMAT
-
-At the end of every development session, update this file with:
+Inspect existing entities/repositories/services/controllers.
+Define the database relationship.
+Implement one logical layer at a time.
+Compile/build.
+Test the endpoint.
+Update this state file.
+Commit and push a clean checkpoint.
+21. SESSION CHECKPOINT
 
 DATE:
+2026-08-20
+
 CURRENT STATUS:
+Authentication and authorization foundation complete.
+
 WHAT WAS COMPLETED:
+
+JWT authentication
+JWT filter
+SecurityContext authentication
+Database-backed role authorization
+Public registration restricted to PATIENT
+Admin-only user creation
+BCrypt verification
+Security testing
+
 FILES CREATED:
+
+auth/filter/JwtAuthenticationFilter.java
+admin/controller/AdminUserController.java
+
 FILES MODIFIED:
+
+auth/service/JwtService.java
+config/SecurityConfig.java
+user/controller/UserController.java
+MEDISCRIPT_PROJECT_STATE.md
+
 DATABASE CHANGES:
+
+Temporary security test users created and removed.
+Existing role structure preserved.
+
 TESTS PERFORMED:
+
+JWT login
+JWT validation
+Protected endpoint
+DOCTOR authorization
+ADMIN authorization
+Public registration role restriction
+BCrypt password storage
+
 ERRORS ENCOUNTERED:
+
+None during the final authorization checkpoint.
+
 ERRORS FIXED:
+
+Weak JWT secret
+Missing JWT_SECRET
+Incorrect JWT YAML nesting
+Temporary plain-text password test-user issue
+
 CURRENT NEXT TASK:
+Begin the medical-domain modules, starting with patient management.
+
 GIT COMMIT:
+133f2c4 Add admin user management and role authorization
+
 IMPORTANT NOTES:
 
-
-## Current Checkpoint — JWT Authentication + Role-Based Authorization
-
-### Authentication
-- Login endpoint: `POST /api/auth/login`
-- Passwords are verified using BCrypt.
-- Successful login returns a JWT.
-- JWT contains:
-    - userId
-    - email (subject)
-    - role
-    - issuedAt
-    - expiration
-
-### JWT Security
-- `JwtService` generates JWT tokens.
-- `JwtAuthenticationFilter` extracts and validates the Bearer token.
-- Authenticated users receive Spring Security authorities based on their database role.
-- Roles are represented as `ROLE_ADMIN`, `ROLE_DOCTOR`, etc.
-
-### Public Registration
-- Endpoint: `POST /api/users`
-- Public registration cannot create an arbitrary role.
-- A request containing `"role": "ADMIN"` was tested and resulted in a `PATIENT`.
-- Password is BCrypt-hashed before storage.
-
-### Admin User Management
-- Endpoint: `POST /api/admin/users`
-- Requires `ROLE_ADMIN`.
-- Admin can create users with roles such as DOCTOR, RECEPTIONIST, and PATIENT.
-- Created passwords are BCrypt-hashed.
-
-### Authorization Tests Completed
-- No JWT → `/api/admin/users` → `403 Forbidden`
-- DOCTOR JWT → `/api/admin/users` → `403 Forbidden`
-- ADMIN JWT → `/api/admin/users` → successful user creation
-- Public registration requesting ADMIN → PATIENT
-- BCrypt storage verified in PostgreSQL.
-
-### Next Step
-- Continue building role-specific functionality.
-- Add proper exception handling and validation where appropriate.
-- Continue testing secured endpoints.
+Do not recreate authentication/security components.
+Do not store secrets in this file.
+Continue from this exact checkpoint.
