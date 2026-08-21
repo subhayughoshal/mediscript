@@ -119,4 +119,16 @@ public class DoctorService {
 
         return doctorRepository.save(doctor);
     }
+
+    public java.util.List<Doctor> getAllDoctors() {
+        return doctorRepository.findAll();
+    }
+
+    public Doctor getDoctorById(Long doctorId) {
+
+        return doctorRepository.findById(doctorId)
+                .orElseThrow(() ->
+                        new RuntimeException("Doctor not found")
+                );
+    }
 }

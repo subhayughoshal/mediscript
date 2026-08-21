@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import com.mediscript.backend.doctor.dto.DoctorSummaryResponse;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/doctors")
@@ -112,6 +115,48 @@ public class DoctorController {
                 doctor.getConsultationFee(),
                 doctor.getClinicAddress(),
                 doctor.getBio()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<DoctorSummaryResponse>> getAllDoctors() {
+
+        List<Doctor> doctors = doctorService.getAllDoctors();
+
+        List<DoctorSummaryResponse> response = doctors.stream()
+                .map(doctor -> new DoctorSummaryResponse(
+                        doctor.getId(),
+                        doctor.getUser().getName(),
+                        doctor.getSpecialization(),
+                        doctor.getQualification(),
+                        doctor.getExperience(),
+                        doctor.getConsultationFee(),
+                        doctor.getClinicAddress(),
+                        doctor.getUser().getPhone()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DoctorSummaryResponse> getDoctorById(
+            @PathVariable Long id
+    ) {
+
+        Doctor doctor = doctorService.getDoctorById(id);
+
+        DoctorSummaryResponse response = new DoctorSummaryResponse(
+                doctor.getId(),
+                doctor.getUser().getName(),
+                doctor.getSpecialization(),
+                doctor.getQualification(),
+                doctor.getExperience(),
+                doctor.getConsultationFee(),
+                doctor.getClinicAddress(),
+                doctor.getUser().getPhone()
         );
 
         return ResponseEntity.ok(response);

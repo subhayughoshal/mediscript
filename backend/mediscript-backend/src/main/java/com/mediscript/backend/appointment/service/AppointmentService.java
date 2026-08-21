@@ -1,0 +1,118 @@
+package com.mediscript.backend.appointment.service;
+
+import com.mediscript.backend.appointment.entity.Appointment;
+import com.mediscript.backend.appointment.repository.AppointmentRepository;
+import com.mediscript.backend.doctor.entity.Doctor;
+import com.mediscript.backend.doctor.repository.DoctorRepository;
+import com.mediscript.backend.patient.entity.Patient;
+import com.mediscript.backend.patient.repository.PatientRepository;
+import com.mediscript.backend.user.entity.User;
+import com.mediscript.backend.user.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+
+@Service
+public class AppointmentService {
+
+    private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
+
+    public AppointmentService(
+            AppointmentRepository appointmentRepository,
+            PatientRepository patientRepository,
+            DoctorRepository doctorRepository,
+            UserRepository userRepository
+    ) {
+        this.appointmentRepository = appointmentRepository;
+        this.patientRepository = patientRepository;
+        this.doctorRepository = doctorRepository;
+        this.userRepository = userRepository;
+    }
+
+    public Appointment createAppointment(
+            String patientEmail,
+            Long doctorId,
+            LocalDate appointmentDate,
+            LocalTime appointmentTime,
+            String reason
+    ) {
+
+        User user = userRepository.findByEmail(patientEmail)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        Patient patient = patientRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Patient profile not found")
+                );
+
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() ->
+                        new RuntimeException("Doctor not found")
+                );
+
+        if (appointmentRepository
+                .existsByDoctorAndAppointmentDateAndAppointmentTime(
+                        doctor,
+                        appointmentDate,
+                        appointmentTime
+                )) {
+
+            throw new RuntimeException(
+                    "Doctor is already booked for this time"
+            );
+        }
+
+        Appointment appointment = new Appointment(
+                patient,
+                doctor,
+                appointmentDate,
+                appointmentTime,
+                reason,
+                "PENDING",
+                null
+        );
+
+        return appointmentRepository.save(appointment);
+    }
+
+    public List<Appointment> getPatientAppointments(
+            String patientEmail
+    ) {
+
+        User user = userRepository.findByEmail(patientEmail)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        Patient patient = patientRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Patient profile not found")
+                );
+
+        return appointmentRepository.findByPatient(patient);
+    }
+
+    public List<Appointment> getDoctorAppointments(
+            String doctorEmail
+    ) {
+
+        User user = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        Doctor doctor = doctorRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Doctor profile not found")
+                );
+
+        return appointmentRepository.findByDoctor(doctor);
+    }
+}
