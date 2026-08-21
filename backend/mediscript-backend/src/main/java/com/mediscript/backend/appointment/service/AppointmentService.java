@@ -115,4 +115,68 @@ public class AppointmentService {
 
         return appointmentRepository.findByDoctor(doctor);
     }
+
+    public Appointment updateAppointmentStatus(
+            String doctorEmail,
+            Long appointmentId,
+            String newStatus
+    ) {
+
+        User user = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        Doctor doctor = doctorRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Doctor profile not found")
+                );
+
+        Appointment appointment = appointmentRepository
+                .findById(appointmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Appointment not found")
+                );
+
+        // Make sure this appointment belongs to the logged-in doctor
+        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+            throw new RuntimeException(
+                    "You are not authorized to modify this appointment"
+            );
+        }
+
+        String currentStatus = appointment.getStatus();
+
+        // Validate allowed status transitions
+        if ("PENDING".equals(currentStatus)) {
+
+            if (!"CONFIRMED".equals(newStatus)
+                    && !"CANCELLED".equals(newStatus)) {
+
+                throw new RuntimeException(
+                        "Invalid status transition"
+                );
+            }
+
+        } else if ("CONFIRMED".equals(currentStatus)) {
+
+            if (!"COMPLETED".equals(newStatus)
+                    && !"CANCELLED".equals(newStatus)) {
+
+                throw new RuntimeException(
+                        "Invalid status transition"
+                );
+            }
+
+        } else {
+
+            throw new RuntimeException(
+                    "Appointment can no longer be modified"
+            );
+        }
+
+        appointment.setStatus(newStatus);
+
+        return appointmentRepository.save(appointment);
+    }
 }

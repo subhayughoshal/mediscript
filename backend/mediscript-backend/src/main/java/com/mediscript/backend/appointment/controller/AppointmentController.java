@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.mediscript.backend.appointment.dto.UpdateAppointmentStatusRequest;
 
 import java.util.List;
 
@@ -97,5 +98,22 @@ public class AppointmentController {
                 appointment.getCreatedAt(),
                 appointment.getUpdatedAt()
         );
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<AppointmentResponse> updateAppointmentStatus(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestBody UpdateAppointmentStatusRequest request
+    ) {
+
+        Appointment appointment =
+                appointmentService.updateAppointmentStatus(
+                        authentication.getName(),
+                        id,
+                        request.getStatus()
+                );
+
+        return ResponseEntity.ok(toResponse(appointment));
     }
 }
