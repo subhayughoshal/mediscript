@@ -5,6 +5,8 @@ import com.mediscript.backend.patient.repository.PatientRepository;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.mediscript.backend.exception.ResourceNotFoundException;
+import com.mediscript.backend.exception.BadRequestException;
 
 import java.time.LocalDate;
 
@@ -33,17 +35,17 @@ public class PatientService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         if (!"PATIENT".equalsIgnoreCase(user.getRole().getName())) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Patient profile can only be created for PATIENT users"
             );
         }
 
         if (patientRepository.existsByUser(user)) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Patient profile already exists"
             );
         }

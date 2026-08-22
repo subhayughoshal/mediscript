@@ -13,6 +13,9 @@ import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.mediscript.backend.prescription.dto.CreatePrescriptionRequest;
+import com.mediscript.backend.exception.BadRequestException;
+import com.mediscript.backend.exception.ForbiddenException;
+import com.mediscript.backend.exception.ResourceNotFoundException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -47,17 +50,21 @@ public class PrescriptionService {
 
         User doctorUser = userRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Doctor doctor = doctorRepository.findByUser(doctorUser)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor profile not found")
+                        new ResourceNotFoundException("Doctor profile not found")
                 );
+
+        if (request.getPatientId() == null) {
+            throw new BadRequestException("Patient ID is required");
+        }
 
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() ->
-                        new RuntimeException("Patient not found")
+                        new ResourceNotFoundException("Patient not found")
                 );
 
         Appointment appointment = null;
@@ -67,24 +74,22 @@ public class PrescriptionService {
             appointment = appointmentRepository
                     .findById(request.getAppointmentId())
                     .orElseThrow(() ->
-                            new RuntimeException("Appointment not found")
+                            new ResourceNotFoundException("Appointment not found")
                     );
 
             if (!appointment.getDoctor().getId().equals(doctor.getId())) {
-                throw new RuntimeException(
+                throw new ForbiddenException(
                         "This appointment does not belong to you"
                 );
             }
 
             if (!appointment.getPatient().getId().equals(patient.getId())) {
-                throw new RuntimeException(
+                throw new ForbiddenException(
                         "This appointment does not belong to the specified patient"
                 );
             }
 
-            if (request.getPatientId() == null) {
-                throw new RuntimeException("Patient ID is required");
-            }
+
 
             if (prescriptionRepository.existsByAppointment(appointment)) {
                 throw new RuntimeException(
@@ -94,7 +99,7 @@ public class PrescriptionService {
         }
 
         if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Prescription must contain at least one medicine"
             );
         }
@@ -128,12 +133,12 @@ public class PrescriptionService {
 
         User user = userRepository.findByEmail(patientEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Patient patient = patientRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Patient profile not found")
+                        new ResourceNotFoundException("Patient profile not found")
                 );
 
         return prescriptionRepository.findByPatient(patient);
@@ -143,12 +148,12 @@ public class PrescriptionService {
 
         User user = userRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Doctor doctor = doctorRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor profile not found")
+                        new ResourceNotFoundException("Doctor profile not found")
                 );
 
         return prescriptionRepository.findByDoctor(doctor);

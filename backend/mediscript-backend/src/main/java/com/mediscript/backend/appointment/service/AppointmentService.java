@@ -9,6 +9,9 @@ import com.mediscript.backend.patient.repository.PatientRepository;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.mediscript.backend.exception.BadRequestException;
+import com.mediscript.backend.exception.ForbiddenException;
+import com.mediscript.backend.exception.ResourceNotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -44,17 +47,17 @@ public class AppointmentService {
 
         User user = userRepository.findByEmail(patientEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Patient patient = patientRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Patient profile not found")
+                        new ResourceNotFoundException("Patient profile not found")
                 );
 
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor not found")
+                        new ResourceNotFoundException("Doctor not found")
                 );
 
         if (appointmentRepository
@@ -64,7 +67,7 @@ public class AppointmentService {
                         appointmentTime
                 )) {
 
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Doctor is already booked for this time"
             );
         }
@@ -88,12 +91,12 @@ public class AppointmentService {
 
         User user = userRepository.findByEmail(patientEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Patient patient = patientRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Patient profile not found")
+                        new ResourceNotFoundException("Patient profile not found")
                 );
 
         return appointmentRepository.findByPatient(patient);
@@ -105,12 +108,12 @@ public class AppointmentService {
 
         User user = userRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Doctor doctor = doctorRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor profile not found")
+                        new ResourceNotFoundException("Doctor profile not found")
                 );
 
         return appointmentRepository.findByDoctor(doctor);
@@ -124,23 +127,23 @@ public class AppointmentService {
 
         User user = userRepository.findByEmail(doctorEmail)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         Doctor doctor = doctorRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor profile not found")
+                        new ResourceNotFoundException("Doctor profile not found")
                 );
 
         Appointment appointment = appointmentRepository
                 .findById(appointmentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Appointment not found")
+                        new ResourceNotFoundException("Appointment not found")
                 );
 
         // Make sure this appointment belongs to the logged-in doctor
         if (!appointment.getDoctor().getId().equals(doctor.getId())) {
-            throw new RuntimeException(
+            throw new ForbiddenException(
                     "You are not authorized to modify this appointment"
             );
         }
@@ -163,14 +166,14 @@ public class AppointmentService {
             if (!"COMPLETED".equals(newStatus)
                     && !"CANCELLED".equals(newStatus)) {
 
-                throw new RuntimeException(
+                throw new BadRequestException(
                         "Invalid status transition"
                 );
             }
 
         } else {
 
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Appointment can no longer be modified"
             );
         }

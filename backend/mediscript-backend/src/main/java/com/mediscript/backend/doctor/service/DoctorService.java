@@ -4,6 +4,7 @@ import com.mediscript.backend.doctor.entity.Doctor;
 import com.mediscript.backend.doctor.repository.DoctorRepository;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
+import com.mediscript.backend.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -33,7 +34,7 @@ public class DoctorService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         if (!"DOCTOR".equalsIgnoreCase(user.getRole().getName())) {
@@ -72,7 +73,7 @@ public class DoctorService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new ResourceNotFoundException("User not found")
                 );
 
         if (!"DOCTOR".equalsIgnoreCase(user.getRole().getName())) {
@@ -83,7 +84,7 @@ public class DoctorService {
 
         return doctorRepository.findByUser(user)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Doctor profile not found"
                         )
                 );
@@ -128,7 +129,7 @@ public class DoctorService {
 
         return doctorRepository.findById(doctorId)
                 .orElseThrow(() ->
-                        new RuntimeException("Doctor not found")
+                        new ResourceNotFoundException("Doctor not found")
                 );
     }
 }
