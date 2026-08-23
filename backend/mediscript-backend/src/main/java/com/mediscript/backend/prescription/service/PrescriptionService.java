@@ -16,6 +16,7 @@ import com.mediscript.backend.prescription.dto.CreatePrescriptionRequest;
 import com.mediscript.backend.exception.BadRequestException;
 import com.mediscript.backend.exception.ForbiddenException;
 import com.mediscript.backend.exception.ResourceNotFoundException;
+import com.mediscript.backend.exception.ConflictException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -92,7 +93,7 @@ public class PrescriptionService {
 
 
             if (prescriptionRepository.existsByAppointment(appointment)) {
-                throw new RuntimeException(
+                throw new ConflictException(
                         "This appointment already has a prescription"
                 );
             }
