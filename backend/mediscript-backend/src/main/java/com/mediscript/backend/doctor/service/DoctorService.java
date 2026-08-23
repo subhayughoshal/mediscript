@@ -5,6 +5,8 @@ import com.mediscript.backend.doctor.repository.DoctorRepository;
 import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import com.mediscript.backend.exception.ResourceNotFoundException;
+import com.mediscript.backend.exception.BadRequestException;
+import com.mediscript.backend.exception.ConflictException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -38,19 +40,19 @@ public class DoctorService {
                 );
 
         if (!"DOCTOR".equalsIgnoreCase(user.getRole().getName())) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "Doctor profile can only be created for DOCTOR users"
             );
         }
 
         if (doctorRepository.existsByUser(user)) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "Doctor profile already exists"
             );
         }
 
         if (doctorRepository.existsByLicenseNumber(licenseNumber)) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "License number already registered"
             );
         }
@@ -77,7 +79,7 @@ public class DoctorService {
                 );
 
         if (!"DOCTOR".equalsIgnoreCase(user.getRole().getName())) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     "User is not a doctor"
             );
         }

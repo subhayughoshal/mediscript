@@ -4,6 +4,7 @@ import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.mediscript.backend.exception.AuthenticationException;
 
 @Service
 public class AuthenticationService {
@@ -23,15 +24,15 @@ public class AuthenticationService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password")
+                        new AuthenticationException("Invalid email or password")
                 );
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new AuthenticationException("Invalid email or password");
         }
 
         if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
-            throw new RuntimeException("User account is not active");
+            throw new AuthenticationException("User account is not active");
         }
 
         return user;

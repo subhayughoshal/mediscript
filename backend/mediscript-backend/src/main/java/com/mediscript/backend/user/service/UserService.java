@@ -6,6 +6,8 @@ import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.RoleRepository;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.mediscript.backend.exception.ConflictException;
+import com.mediscript.backend.exception.ResourceNotFoundException;
 
 @Service
 public class UserService {
@@ -33,12 +35,12 @@ public class UserService {
     ) {
 
         if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException("Email already registered");
         }
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() ->
-                        new RuntimeException("Role not found: " + roleName)
+                        new ResourceNotFoundException("Role not found: " + roleName)
                 );
 
         User user = new User(
