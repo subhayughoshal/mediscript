@@ -8,6 +8,8 @@ import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.mediscript.backend.exception.ConflictException;
 import com.mediscript.backend.exception.ResourceNotFoundException;
+import com.mediscript.backend.exception.BadRequestException;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -51,6 +53,29 @@ public class UserService {
                 role,
                 "ACTIVE"
         );
+
+        return userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User updateUserStatus(Long userId, String status) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+
+        if (!"ACTIVE".equalsIgnoreCase(status)
+                && !"INACTIVE".equalsIgnoreCase(status)) {
+            throw new BadRequestException(
+                    "Status must be ACTIVE or INACTIVE"
+            );
+        }
+
+        user.setStatus(status.toUpperCase());
 
         return userRepository.save(user);
     }
