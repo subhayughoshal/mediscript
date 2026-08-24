@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import com.mediscript.backend.doctor.dto.DoctorSummaryResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class DoctorController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DoctorResponse> createDoctor(
             @Valid @RequestBody CreateDoctorRequest request
     ) {
@@ -60,6 +62,7 @@ public class DoctorController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<DoctorResponse> getMyProfile(
             Authentication authentication
     ) {
@@ -87,6 +90,7 @@ public class DoctorController {
     }
 
     @PutMapping("/me")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<DoctorResponse> updateMyProfile(
             Authentication authentication,
             @Valid @RequestBody CreateDoctorRequest request
@@ -122,6 +126,7 @@ public class DoctorController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'ADMIN')")
     public ResponseEntity<List<DoctorSummaryResponse>> getAllDoctors() {
 
         List<Doctor> doctors = doctorService.getAllDoctors();
@@ -143,6 +148,7 @@ public class DoctorController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'ADMIN')")
     public ResponseEntity<DoctorSummaryResponse> getDoctorById(
             @PathVariable Long id
     ) {

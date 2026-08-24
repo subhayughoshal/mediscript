@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class PrescriptionController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<PrescriptionResponse> createPrescription(
             Authentication authentication,
             @Valid @RequestBody CreatePrescriptionRequest request
@@ -43,6 +45,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
     public ResponseEntity<List<PrescriptionResponse>> getMyPrescriptions(
             Authentication authentication
     ) {
@@ -58,6 +61,7 @@ public class PrescriptionController {
     }
 
     @GetMapping("/doctor")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<PrescriptionResponse>> getDoctorPrescriptions(
             Authentication authentication
     ) {

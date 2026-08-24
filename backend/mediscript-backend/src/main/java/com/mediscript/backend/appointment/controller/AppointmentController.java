@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.mediscript.backend.appointment.dto.UpdateAppointmentStatusRequest;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class AppointmentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
     public ResponseEntity<AppointmentResponse> createAppointment(
             Authentication authentication,
            @Valid @RequestBody CreateAppointmentRequest request
@@ -46,6 +48,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
     public ResponseEntity<List<AppointmentResponse>> getMyAppointments(
             Authentication authentication
     ) {
@@ -61,6 +64,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/doctor")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<AppointmentResponse>> getDoctorAppointments(
             Authentication authentication
     ) {
@@ -102,6 +106,7 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<AppointmentResponse> updateAppointmentStatus(
             Authentication authentication,
             @PathVariable Long id,
