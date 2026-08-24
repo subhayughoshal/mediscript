@@ -1,20 +1,39 @@
 package com.mediscript.backend.prescription.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public class CreatePrescriptionRequest {
 
+    @NotNull(message = "Patient ID is required")
+    @Positive(message = "Patient ID must be positive")
     private Long patientId;
 
+    @Positive(message = "Appointment ID must be positive")
     private Long appointmentId;
 
+    @NotNull(message = "Prescription date is required")
+    @PastOrPresent(message = "Prescription date cannot be in the future")
     private LocalDate prescriptionDate;
 
+    @NotBlank(message = "Diagnosis is required")
+    @Size(max = 1000, message = "Diagnosis must not exceed 1000 characters")
     private String diagnosis;
 
+    @Size(max = 1000, message = "Notes must not exceed 1000 characters")
     private String notes;
 
+    @NotEmpty(message = "Prescription must contain at least one medicine")
+    @Size(max = 50, message = "Prescription cannot contain more than 50 medicines")
+    @Valid
     private List<PrescriptionItemRequest> items;
 
     public CreatePrescriptionRequest() {

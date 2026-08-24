@@ -7,6 +7,7 @@ import com.mediscript.backend.patient.service.PatientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/patients")
@@ -20,7 +21,7 @@ public class PatientController {
 
     @PostMapping
     public ResponseEntity<PatientResponse> createPatient(
-            @RequestBody CreatePatientRequest request
+            @Valid @RequestBody CreatePatientRequest request
     ) {
 
         Patient patient = patientService.createPatient(

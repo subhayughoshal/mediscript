@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import com.mediscript.backend.doctor.dto.DoctorSummaryResponse;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class DoctorController {
 
     @PostMapping
     public ResponseEntity<DoctorResponse> createDoctor(
-            @RequestBody CreateDoctorRequest request
+            @Valid @RequestBody CreateDoctorRequest request
     ) {
 
         Doctor doctor = doctorService.createDoctor(
@@ -88,7 +89,7 @@ public class DoctorController {
     @PutMapping("/me")
     public ResponseEntity<DoctorResponse> updateMyProfile(
             Authentication authentication,
-            @RequestBody CreateDoctorRequest request
+            @Valid @RequestBody CreateDoctorRequest request
     ) {
 
         Doctor doctor = doctorService.updateDoctor(

@@ -156,7 +156,7 @@ public class AppointmentService {
             if (!"CONFIRMED".equals(newStatus)
                     && !"CANCELLED".equals(newStatus)) {
 
-                throw new RuntimeException(
+                throw new BadRequestException(
                         "Invalid status transition"
                 );
             }

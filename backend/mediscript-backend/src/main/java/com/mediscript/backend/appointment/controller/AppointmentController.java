@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.mediscript.backend.appointment.dto.UpdateAppointmentStatusRequest;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<AppointmentResponse> createAppointment(
             Authentication authentication,
-            @RequestBody CreateAppointmentRequest request
+           @Valid @RequestBody CreateAppointmentRequest request
     ) {
 
         Appointment appointment =
@@ -104,7 +105,7 @@ public class AppointmentController {
     public ResponseEntity<AppointmentResponse> updateAppointmentStatus(
             Authentication authentication,
             @PathVariable Long id,
-            @RequestBody UpdateAppointmentStatusRequest request
+            @Valid @RequestBody UpdateAppointmentStatusRequest request
     ) {
 
         Appointment appointment =
