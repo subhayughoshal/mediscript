@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.mediscript.backend.admin.dto.UpdateUserStatusRequest;
 import jakarta.validation.Valid;
+import com.mediscript.backend.admin.dto.UpdateUserRequest;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -76,6 +77,51 @@ public class AdminUserController {
         User user = userService.updateUserStatus(
                 id,
                 request.getStatus()
+        );
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.getStatus()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getUserById(
+            @PathVariable Long id
+    ) {
+
+        User user = userService.getUserById(id);
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.getStatus()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+
+        User user = userService.updateUser(
+                id,
+                request.getName(),
+                request.getEmail(),
+                request.getPhone(),
+                request.getRole()
         );
 
         UserResponse response = new UserResponse(

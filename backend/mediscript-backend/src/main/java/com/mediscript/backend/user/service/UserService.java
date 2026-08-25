@@ -79,4 +79,49 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    public User getUserById(Long userId) {
+
+        return userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+    }
+
+    public User updateUser(
+            Long userId,
+            String name,
+            String email,
+            String phone,
+            String roleName
+    ) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+
+        // Prevent changing to an email already used by another user
+        if (!user.getEmail().equalsIgnoreCase(email)
+                && userRepository.existsByEmail(email)) {
+
+            throw new ConflictException(
+                    "Email already registered"
+            );
+        }
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Role not found: " + roleName
+                        )
+                );
+
+        user.setName(name);
+        user.setEmail(email);
+        user.setPhone(phone);
+        user.setRole(role);
+
+        return userRepository.save(user);
+    }
 }

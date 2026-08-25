@@ -182,4 +182,16 @@ public class AppointmentService {
 
         return appointmentRepository.save(appointment);
     }
+
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
+    }
+
+    public Appointment getAppointmentById(Long appointmentId) {
+
+        return appointmentRepository.findById(appointmentId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Appointment not found")
+                );
+    }
 }

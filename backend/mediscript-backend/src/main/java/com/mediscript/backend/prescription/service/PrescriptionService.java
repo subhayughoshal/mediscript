@@ -159,4 +159,16 @@ public class PrescriptionService {
 
         return prescriptionRepository.findByDoctor(doctor);
     }
+
+    public List<Prescription> getAllPrescriptions() {
+        return prescriptionRepository.findAll();
+    }
+
+    public Prescription getPrescriptionById(Long prescriptionId) {
+
+        return prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Prescription not found")
+                );
+    }
 }

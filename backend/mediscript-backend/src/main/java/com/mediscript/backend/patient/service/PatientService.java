@@ -7,6 +7,7 @@ import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.mediscript.backend.exception.ResourceNotFoundException;
 import com.mediscript.backend.exception.BadRequestException;
+import java.util.List;
 
 import java.time.LocalDate;
 
@@ -60,5 +61,17 @@ public class PatientService {
         );
 
         return patientRepository.save(patient);
+    }
+
+    public List<Patient> getAllPatients() {
+        return patientRepository.findAll();
+    }
+
+    public Patient getPatientById(Long patientId) {
+
+        return patientRepository.findById(patientId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Patient not found")
+                );
     }
 }
