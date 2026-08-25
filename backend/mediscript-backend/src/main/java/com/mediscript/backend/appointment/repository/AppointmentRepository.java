@@ -20,4 +20,6 @@ public interface AppointmentRepository
             LocalDate appointmentDate,
             java.time.LocalTime appointmentTime
     );
+
+    long countByStatus(String status);
 }
