@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.mediscript.backend.audit.service.AuditLogService;
 
 import java.util.List;
 
@@ -19,11 +20,14 @@ import java.util.List;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final AuditLogService auditLogService;
 
     public PrescriptionController(
-            PrescriptionService prescriptionService
+            PrescriptionService prescriptionService,
+            AuditLogService auditLogService
     ) {
         this.prescriptionService = prescriptionService;
+        this.auditLogService = auditLogService;
     }
 
     @PostMapping
@@ -38,6 +42,13 @@ public class PrescriptionController {
                         authentication.getName(),
                         request
                 );
+        auditLogService.log(
+                "PRESCRIPTION_CREATED",
+                "PRESCRIPTION",
+                prescription.getId(),
+                "Prescription created for patient "
+                        + prescription.getPatient().getId()
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

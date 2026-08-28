@@ -11,15 +11,18 @@ import org.springframework.web.bind.annotation.*;
 import com.mediscript.backend.admin.dto.UpdateUserStatusRequest;
 import jakarta.validation.Valid;
 import com.mediscript.backend.admin.dto.UpdateUserRequest;
+import com.mediscript.backend.audit.service.AuditLogService;
 
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 
     private final UserService userService;
+    private final AuditLogService auditLogService;
 
-    public AdminUserController(UserService userService) {
+    public AdminUserController(UserService userService, AuditLogService auditLogService) {
         this.userService = userService;
+        this.auditLogService = auditLogService;
     }
 
     @PostMapping
@@ -35,6 +38,13 @@ public class AdminUserController {
                 request.getRole()
         );
 
+        auditLogService.log(
+                "USER_CREATED",
+                "USER",
+                user.getId(),
+                "Created user with role " + user.getRole().getName()
+        );
+
         UserResponse response = new UserResponse(
                 user.getId(),
                 user.getName(),
@@ -47,6 +57,7 @@ public class AdminUserController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+
     }
 
     @GetMapping
@@ -77,6 +88,13 @@ public class AdminUserController {
         User user = userService.updateUserStatus(
                 id,
                 request.getStatus()
+        );
+
+        auditLogService.log(
+                "USER_STATUS_CHANGED",
+                "USER",
+                user.getId(),
+                "Changed user status to " + user.getStatus()
         );
 
         UserResponse response = new UserResponse(
@@ -122,6 +140,13 @@ public class AdminUserController {
                 request.getEmail(),
                 request.getPhone(),
                 request.getRole()
+        );
+
+        auditLogService.log(
+                "USER_UPDATED",
+                "USER",
+                user.getId(),
+                "Updated user details"
         );
 
         UserResponse response = new UserResponse(

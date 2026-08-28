@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.mediscript.backend.appointment.dto.UpdateAppointmentStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.mediscript.backend.audit.service.AuditLogService;
 
 import java.util.List;
 
@@ -19,18 +20,21 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final AuditLogService auditLogService;
 
     public AppointmentController(
-            AppointmentService appointmentService
+            AppointmentService appointmentService,
+            AuditLogService auditLogService
     ) {
         this.appointmentService = appointmentService;
+        this.auditLogService = auditLogService;
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
     public ResponseEntity<AppointmentResponse> createAppointment(
             Authentication authentication,
-           @Valid @RequestBody CreateAppointmentRequest request
+            @Valid @RequestBody CreateAppointmentRequest request
     ) {
 
         Appointment appointment =
@@ -41,6 +45,13 @@ public class AppointmentController {
                         request.getAppointmentTime(),
                         request.getReason()
                 );
+
+        auditLogService.log(
+                "APPOINTMENT_CREATED",
+                "APPOINTMENT",
+                appointment.getId(),
+                "Appointment created with doctor " + appointment.getDoctor().getId()
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -113,6 +124,11 @@ public class AppointmentController {
             @Valid @RequestBody UpdateAppointmentStatusRequest request
     ) {
 
+        Appointment currentAppointment =
+                appointmentService.getAppointmentById(id);
+
+        String oldStatus = currentAppointment.getStatus();
+
         Appointment appointment =
                 appointmentService.updateAppointmentStatus(
                         authentication.getName(),
@@ -120,6 +136,17 @@ public class AppointmentController {
                         request.getStatus()
                 );
 
+        auditLogService.log(
+                "APPOINTMENT_STATUS_CHANGED",
+                "APPOINTMENT",
+                appointment.getId(),
+                "Changed appointment status from "
+                        + oldStatus
+                        + " to "
+                        + appointment.getStatus()
+        );
+
         return ResponseEntity.ok(toResponse(appointment));
     }
+
 }
