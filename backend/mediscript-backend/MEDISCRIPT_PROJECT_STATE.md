@@ -936,3 +936,19 @@ Continue from this exact checkpoint.
 ✅ GET /api/doctors/me tested with JWT
 ✅ PUT /api/doctors/me tested with JWT
 ✅ Doctor profile update verified in PostgreSQL
+
+WALK-IN REGISTRATION (done)
+- POST /api/reception/walk-ins (RECEPTIONIST, ADMIN) and POST /api/doctors/me/walk-ins (DOCTOR)
+- Creates PATIENT user (random unusable password) and profile if needed, books CONFIRMED appointment for now
+- Doctor-patient relationship = non-cancelled appointment (existsByDoctorAndPatientAndStatusNot)
+PATIENT MODULE (done)
+- POST /api/patients: PATIENT (own userId only) or ADMIN
+- GET/PUT /api/patients/me (PATIENT); GET/PUT /api/patients/{id} (DOCTOR with appointment)
+SECURITY FIXES
+- Prescriptions without appointmentId require an existing appointment with the patient
+- Prescribing against a CANCELLED appointment rejected
+- RECEPTIONIST may list doctors
+OPEN ITEMS
+- Set-password flow with email verification for walk-in accounts
+- Patient cancel-appointment endpoint; receptionist read endpoints if needed
+- MockMvc/security integration tests

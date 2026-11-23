@@ -68,6 +68,19 @@ public class PrescriptionService {
                         new ResourceNotFoundException("Patient not found")
                 );
 
+        // Without an appointment, the doctor must still have a
+        // (non-cancelled) appointment with this patient
+        if (request.getAppointmentId() == null
+                && !appointmentRepository.existsByDoctorAndPatientAndStatusNot(
+                        doctor,
+                        patient,
+                        "CANCELLED"
+                )) {
+            throw new ForbiddenException(
+                    "You can only prescribe to patients you have an appointment with"
+            );
+        }
+
         Appointment appointment = null;
 
         if (request.getAppointmentId() != null) {
@@ -91,6 +104,12 @@ public class PrescriptionService {
             }
 
 
+
+            if ("CANCELLED".equals(appointment.getStatus())) {
+                throw new BadRequestException(
+                        "Cannot prescribe against a cancelled appointment"
+                );
+            }
 
             if (prescriptionRepository.existsByAppointment(appointment)) {
                 throw new ConflictException(

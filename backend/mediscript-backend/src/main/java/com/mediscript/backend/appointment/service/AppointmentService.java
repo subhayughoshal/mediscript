@@ -10,11 +10,13 @@ import com.mediscript.backend.user.entity.User;
 import com.mediscript.backend.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.mediscript.backend.exception.BadRequestException;
+import com.mediscript.backend.exception.ConflictException;
 import com.mediscript.backend.exception.ForbiddenException;
 import com.mediscript.backend.exception.ResourceNotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -79,6 +81,46 @@ public class AppointmentService {
                 appointmentTime,
                 reason,
                 "PENDING",
+                null
+        );
+
+        return appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Creates a walk-in appointment for right now (today, current time to
+     * the minute) with status CONFIRMED. Used by the walk-in registration flow,
+     * where the patient and doctor have already been resolved.
+     */
+    public Appointment createWalkInAppointment(
+            Patient patient,
+            Doctor doctor,
+            String reason
+    ) {
+
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
+
+        if (appointmentRepository
+                .existsByDoctorAndAppointmentDateAndAppointmentTime(
+                        doctor,
+                        today,
+                        now
+                )) {
+
+            throw new ConflictException(
+                    "Doctor already has an appointment at this minute. "
+                            + "Please try again in a moment"
+            );
+        }
+
+        Appointment appointment = new Appointment(
+                patient,
+                doctor,
+                today,
+                now,
+                reason,
+                "CONFIRMED",
                 null
         );
 

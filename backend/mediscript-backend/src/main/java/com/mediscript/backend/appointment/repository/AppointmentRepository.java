@@ -22,4 +22,12 @@ public interface AppointmentRepository
     );
 
     long countByStatus(String status);
+
+    // True when the doctor has at least one appointment with this patient
+    // whose status is anything other than the given status (used with "CANCELLED")
+    boolean existsByDoctorAndPatientAndStatusNot(
+            Doctor doctor,
+            Patient patient,
+            String status
+    );
 }

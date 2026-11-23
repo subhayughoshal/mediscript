@@ -1,0 +1,177 @@
+# Manual test script for the walk-in feature.
+# Works with the VS Code "REST Client" extension or IntelliJ's HTTP client.
+# Log in first, then paste each token into the variables below.
+
+@baseUrl = http://localhost:8080
+@adminToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBtZWRpc2NyaXB0LmxvY2FsIiwidXNlcklkIjo5LCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3OTU0MjQ0ODksImV4cCI6MTc5NTUxMDg4OX0.8aoKOnL5oLNMtgMuvQc0y0pApashSYi4biimS4JO38g
+@receptionToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZWNlcHRpb25AdGVzdC5jb20iLCJ1c2VySWQiOjE0LCJyb2xlIjoiUkVDRVBUSU9OSVNUIiwiaWF0IjoxNzk1NDI1MTkyLCJleHAiOjE3OTU1MTE1OTJ9.EO-p2r_OfH6ZTpCsVCoeFgWgKsrN1AjE8fNogtPlp2o
+@doctorToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkb2MxQHRlc3QuY29tIiwidXNlcklkIjoxNSwicm9sZSI6IkRPQ1RPUiIsImlhdCI6MTc5NTQzMjM5MywiZXhwIjoxNzk1NTE4NzkzfQ.avna7dUxfm5cIOlXHAV8AmB1rqn_ltVzZmDCc8kN9gs
+@otherDoctorToken = eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkb2MyQHRlc3QuY29tIiwidXNlcklkIjoxNiwicm9sZSI6IkRPQ1RPUiIsImlhdCI6MTc5NTQzMjQ2MSwiZXhwIjoxNzk1NTE4ODYxfQ.vXjzegyYQ0y37HkTPhmo6BTr6JwlkgNVQx2jqUBvmJU
+
+### 1. Admin login (use your ADMIN_EMAIL / ADMIN_PASSWORD)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "admin@mediscript.local", "password": "Astrosubh@mediscript" }
+
+### 2. Admin creates a RECEPTIONIST user
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "name": "Rita Reception", "email": "reception@test.com", "password": "reception123", "phone": "9000000001", "role": "RECEPTIONIST" }
+
+### 3. Admin creates two DOCTOR users (then a doctor profile for each: POST /api/doctors)
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "name": "Dr. One", "email": "doc1@test.com", "password": "doctor123", "phone": "9000000002", "role": "DOCTOR" }
+
+###
+POST {{baseUrl}}/api/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "name": "Dr. Two", "email": "doc2@test.com", "password": "doctor123", "phone": "9000000003", "role": "DOCTOR" }
+
+### 3b. Doctor profile (replace userId with the id returned above)
+POST {{baseUrl}}/api/doctors
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "userId": 15, "specialization": "General Medicine", "qualification": "MBBS", "licenseNumber": "LIC-002", "experience": 5, "consultationFee": 300, "clinicAddress": "Main Road", "bio": "GP" }
+
+### 4. Receptionist logs in, then lists doctors to find a doctorId
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "reception@test.com", "password": "reception123" }
+
+###
+GET {{baseUrl}}/api/doctors
+Authorization: Bearer {{receptionToken}}
+
+### 5. WALK-IN (receptionist): brand-new patient -> expect 201, newAccountCreated=true, newProfileCreated=true, status CONFIRMED
+POST {{baseUrl}}/api/reception/walk-ins
+Authorization: Bearer {{receptionToken}}
+Content-Type: application/json
+
+{
+  "doctorId": 1,
+  "name": "Asha Roy",
+  "email": "asha@test.com",
+  "phone": "9876543210",
+  "dateOfBirth": "1992-03-04",
+  "gender": "Female",
+  "reason": "Fever for two days"
+}
+
+### 6. Same patient again, different doctor: only email + reason needed -> both new* flags false
+POST {{baseUrl}}/api/reception/walk-ins
+Authorization: Bearer {{receptionToken}}
+Content-Type: application/json
+
+{ "doctorId": 2, "email": "asha@test.com", "reason": "Second opinion" }
+
+### 7. Same doctor within the same minute -> expect 409 Conflict (retry a minute later)
+POST {{baseUrl}}/api/reception/walk-ins
+Authorization: Bearer {{receptionToken}}
+Content-Type: application/json
+
+{ "doctorId": 1, "email": "asha@test.com", "reason": "Too soon" }
+
+### 8. New patient with missing details -> expect 400 "A new patient requires: ..."
+POST {{baseUrl}}/api/reception/walk-ins
+Authorization: Bearer {{receptionToken}}
+Content-Type: application/json
+
+{ "doctorId": 1, "email": "someone@test.com", "reason": "Cough" }
+
+### Login as doc1
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "doc1@test.com",
+  "password": "doctor123"
+}
+
+
+###Login as doc2
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "doc2@test.com",
+  "password": "doctor123"
+}
+
+### 9. DOCTOR registers their own walk-in (doctorId is ignored; the logged-in doctor is used)
+POST {{baseUrl}}/api/doctors/me/walk-ins
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "name": "Raj Kumar",
+  "email": "raj@test.com",
+  "phone": "9123456780",
+  "dateOfBirth": "1980-01-01",
+  "gender": "Male",
+  "reason": "Cough"
+}
+
+### 10. Doctor sees the walk-in appointment, then views and updates that patient
+GET {{baseUrl}}/api/appointments/doctor
+Authorization: Bearer {{doctorToken}}
+
+###
+GET {{baseUrl}}/api/patients/3
+Authorization: Bearer {{doctorToken}}
+
+###
+PUT {{baseUrl}}/api/patients/1
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{ "dateOfBirth": "1992-03-04", "gender": "Female", "bloodGroup": "O+", "address": "12 Lake Road", "emergencyContact": "9000011111" }
+
+### 11. Doctor prescribes WITHOUT an appointmentId (allowed because they have an appointment with the patient)
+POST {{baseUrl}}/api/prescriptions
+Authorization: Bearer {{doctorToken}}
+Content-Type: application/json
+
+{
+  "patientId": 1,
+  "prescriptionDate": "2026-11-21",
+  "diagnosis": "Viral fever",
+  "items": [
+    { "medicineName": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day", "duration": "5 days", "instructions": "After food" }
+  ]
+}
+
+### ---------- NEGATIVE CHECKS (all must be rejected) ----------
+
+### N1. A doctor with NO appointment with the patient cannot view them -> 403
+GET {{baseUrl}}/api/patients/1
+Authorization: Bearer {{otherDoctorToken}}
+
+### N2. ...nor prescribe to them -> 403
+POST {{baseUrl}}/api/prescriptions
+Authorization: Bearer {{otherDoctorToken}}
+Content-Type: application/json
+
+{ "patientId": 1, "prescriptionDate": "2026-11-21", "diagnosis": "x", "items": [ { "medicineName": "x", "dosage": "x", "frequency": "x", "duration": "x" } ] }
+
+### N3. A receptionist can no longer create arbitrary patient profiles -> 403
+POST {{baseUrl}}/api/patients
+Authorization: Bearer {{receptionToken}}
+Content-Type: application/json
+
+{ "userId": 1, "dateOfBirth": "1990-01-01", "gender": "Male", "bloodGroup": "O+", "address": "x", "emergencyContact": "1" }
+
+### N4. A walk-in account cannot be logged into (random password nobody knows) -> 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "asha@test.com", "password": "anything-you-guess" }
